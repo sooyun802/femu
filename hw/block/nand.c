@@ -253,6 +253,7 @@ static inline void nand_pushio_byte(NANDFlashState *s, uint8_t value)
 static void nand_command(NANDFlashState *s)
 {
     unsigned int offset;
+    printf("[sooyun] entered nand_command\n");
     switch (s->cmd) {
     case NAND_CMD_READ0:
         s->iolen = 0;
