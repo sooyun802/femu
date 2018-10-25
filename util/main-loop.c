@@ -226,6 +226,9 @@ static int os_host_main_loop_wait(int64_t timeout)
 
     glib_pollfds_fill(&timeout);
 
+	// sooyun
+	spin_counter = 0;
+
     /* If the I/O thread is very busy or we are incorrectly busy waiting in
      * the I/O thread, this can lead to starvation of the BQL such that the
      * VCPU threads never run.  To make sure we can detect the later case,

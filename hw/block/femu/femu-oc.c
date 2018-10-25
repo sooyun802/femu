@@ -716,7 +716,7 @@ uint16_t femu_oc_rw(NvmeCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
         int nb_secs_to_read = 0;
         now = qemu_clock_get_ns(QEMU_CLOCK_REALTIME);
         for (i = 0; i <= secs_idx; i++) {
-            ppa = psl[si]; 
+            ppa = psl[si];
             nb_secs_to_read = secs_layout[i];
             //printf("Coperd,secs_layout[%d]=%d,si=%d\n", i, nb_secs_to_read, si);
             si += nb_secs_to_read;
@@ -749,6 +749,7 @@ uint16_t femu_oc_rw(NvmeCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
             }
             start_data_transfer_ts = chip_next_avail_time[lunid];
             /* Coperd: TODO: replace 4 with a calculated value (c->num_sec) */
+            //assert(nb_secs_to_read <= 8 && nb_secs_to_read >= 1);
             assert(nb_secs_to_read <= 4 && nb_secs_to_read >= 1);
             int chnl_transfer_time = chnl_page_tr_t * nb_secs_to_read / 4;
 
@@ -837,8 +838,11 @@ uint16_t femu_oc_rw(NvmeCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
         }
     }
 
+	// [sooyun] update expiring time
     req->expire_time = qemu_clock_get_ns(QEMU_CLOCK_REALTIME) + max - overhead;
     //printf("Coperd,should,%" PRId64 "\n", max);
+	// [sooyun]
+	// printf("[sy] expire %" PRId64 " max %" PRId64 "\n", req->expire_time, max);
 
 	/* Coperd: TOFIX, fix the meta buf later. For now, comment out the part to
 	 * mask LightNVM corrupted read LBA warnings */
@@ -866,6 +870,7 @@ uint16_t femu_oc_rw(NvmeCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
 
     ///////////////////////////////////////////////////////////////////////////
     // should add DMA emulation through buffer here
+	// [sooyun] does the same thing as nvme_heap_storage_rw() in nvme.c
     QEMUIOVector iov;
     int sg_cur_index = 0;
     dma_addr_t sg_cur_byte = 0;
@@ -934,8 +939,9 @@ uint16_t femu_oc_rw(NvmeCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
         qemu_iovec_destroy(&req->iov);
     }
 
-    return NVME_SUCCESS;
+	//printf("[sy] t\n");
 
+    return NVME_SUCCESS;
 
     dma_acct_start(n->conf.blk, &req->acct, &req->qsg, req->is_write ?
             BLOCK_ACCT_WRITE : BLOCK_ACCT_READ);
@@ -957,9 +963,13 @@ uint16_t femu_oc_rw(NvmeCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
 
     }
 
+	//printf("[sy] v\n");
+
     return NVME_NO_COMPLETE;
 
 fail_free_msl:
+	//printf("[sy] w\n");
+
     g_free(msl);
 
     return err;
@@ -1393,7 +1403,7 @@ fail_bbt:
 
     return ret;
 }
- 
+
 int femu_oc_init(NvmeCtrl *n)
 {
     FEMU_OC_Ctrl *ln;
