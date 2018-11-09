@@ -749,8 +749,11 @@ uint16_t femu_oc_rw(NvmeCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
             }
             start_data_transfer_ts = chip_next_avail_time[lunid];
             /* Coperd: TODO: replace 4 with a calculated value (c->num_sec) */
-            //assert(nb_secs_to_read <= 8 && nb_secs_to_read >= 1);
-            assert(nb_secs_to_read <= 4 && nb_secs_to_read >= 1);
+			// ucare-uchicago (Add small fix)
+            assert(nb_secs_to_read <= 8 && nb_secs_to_read >= 1);
+
+			// original
+            //assert(nb_secs_to_read <= 4 && nb_secs_to_read >= 1);
             int chnl_transfer_time = chnl_page_tr_t * nb_secs_to_read / 4;
 
             if (start_data_transfer_ts < chnl_next_avail_time[ch]) {
@@ -1208,13 +1211,12 @@ uint16_t femu_oc_erase_async(NvmeCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
 
     int ch = (psl[0] & ln->ppaf.ch_mask) >> ln->ppaf.ch_offset;
     int lun = (psl[0] & ln->ppaf.lun_mask) >> ln->ppaf.lun_offset;
-    int num_ch = ln->id_ctrl.groups[0].num_ch;
-    int lunid = ch * num_ch + lun;
-	/* ucare-uchicago
+    //int num_ch = ln->id_ctrl.groups[0].num_ch;
+    //int lunid = ch * num_ch + lun;
+	// ucare-uchicago (bug fixed)
     //int num_ch = ln->id_ctrl.groups[0].num_ch;
     int num_lun = ln->id_ctrl.groups[0].num_lun;
     int lunid = ch * num_lun + lun;
-	*/
     int64_t now = qemu_clock_get_ns(QEMU_CLOCK_REALTIME);
     //printf("Coperd,in erase, meta ops time: %" PRId64 ", overhead=%" PRId64 "\n", now - req->st, overhead);
     if (now < chip_next_avail_time[lunid]) {
@@ -1272,8 +1274,8 @@ void femu_oc_init_id_ctrl(FEMU_OC_Ctrl *ln)
     ln_id->ppaf.ch_offset = ln_id->ppaf.lun_offset + ln_id->ppaf.lun_len;
     ln_id->ppaf.ch_len = qemu_fls(cpu_to_le16(ln->params.num_ch) - 1);
 
-    //FEMU_OC_IdAddrFormat ppaf = ln_id->ppaf;
-    //printf("Coperd,ppaf,ch_len=%d,ch_offset=%d,lun_len=%d,lun_offset=%d,blk_len=%d,blk_offset=%d,pg_len=%d,pg_offset=%d,pln_len=%d,pln_offset=%d,sec_len=%d,sec_offset=%d\n", ppaf.ch_len, ppaf.ch_offset, ppaf.lun_len, ppaf.lun_offset, ppaf.blk_len, ppaf.blk_offset, ppaf.pg_len, ppaf.pg_offset, ppaf.pln_len, ppaf.pln_offset, ppaf.sect_len, ppaf.sect_offset);
+    FEMU_OC_IdAddrFormat ppaf = ln_id->ppaf;
+    printf("Coperd,ppaf,ch_len=%d,ch_offset=%d,lun_len=%d,lun_offset=%d,blk_len=%d,blk_offset=%d,pg_len=%d,pg_offset=%d,pln_len=%d,pln_offset=%d,sec_len=%d,sec_offset=%d\n", ppaf.ch_len, ppaf.ch_offset, ppaf.lun_len, ppaf.lun_offset, ppaf.blk_len, ppaf.blk_offset, ppaf.pg_len, ppaf.pg_offset, ppaf.pln_len, ppaf.pln_offset, ppaf.sect_len, ppaf.sect_offset);
 }
 
 int femu_oc_init_meta(FEMU_OC_Ctrl *ln)
